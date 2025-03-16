@@ -6,3 +6,6 @@ api/db8
 
 # node
 node_modules
+
+# next
+.next
