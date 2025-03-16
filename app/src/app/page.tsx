@@ -33,9 +33,9 @@ export default function Debate() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-200 p-4">
-      <div className="flex flex-col w-full bg-white shadow-md rounded-lg p-4">
-        <div className="flex flex-col overflow-y-auto max-h-[50vh]">
+    <div className="flex flex-col items-center justify-center bg-gray-200 h-full p-4">
+      <div className="flex flex-col w-full bg-white shadow-md rounded-lg grow">
+        <div className="flex flex-col overflow-y-auto grow">
           {messages.map((message, index) => (
             <div key={index} className="p-2 bg-gray-100 rounded-lg mb-2">
               <p className="text-black">
@@ -49,23 +49,19 @@ export default function Debate() {
             </div>
           ))}
         </div>
-        <div className="flex flex-col text-black sm:flex-row mt-4 space-y-2 sm:space-y-0 sm:space-x-2">
-          <input
-            type="file"
-            onChange={handleFileUpload}
-            className="flex-none"
-          />
+        <div className="flex flex-col p-1 text-black sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+          <input type="file" onChange={handleFileUpload} />
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyPress}
-            className="flex-grow p-2 border rounded-lg"
+            className="flex-grow border rounded-lg"
             placeholder="Type a message..."
             rows={3}
           />
           <button
             onClick={handleSend}
-            className="flex-none p-2 bg-blue-500 text-white rounded-lg"
+            className="p-1 bg-blue-500 text-white rounded-lg h-1/2"
           >
             Send
           </button>
