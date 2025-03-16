@@ -1,8 +1,8 @@
 # dir env
 .envrc
 
-# go
-
+# go executable
+api/db8
 
 # node
 node_modules
