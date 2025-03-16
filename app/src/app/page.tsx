@@ -35,9 +35,9 @@ export default function Debate() {
   return (
     <div className="flex flex-col items-center justify-center bg-gray-200 h-full p-4">
       <div className="flex flex-col w-full bg-white shadow-md rounded-lg grow">
-        <div className="flex flex-col overflow-y-auto grow">
+        <div className="flex flex-col overflow-y-auto grow bg-gray-100 break-words">
           {messages.map((message, index) => (
-            <div key={index} className="p-2 bg-gray-100 rounded-lg mb-2">
+            <div key={index} className="p-2 rounded-lg mb-2 bg-white max-w-full w-fit">
               <p className="text-black">
                 {message.split("\n").map((line, index) => (
                   <React.Fragment key={index}>
@@ -55,7 +55,7 @@ export default function Debate() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyPress}
-            className="flex-grow border rounded-lg"
+            className="flex-grow border rounded-lg resize-none"
             placeholder="Type a message..."
             rows={3}
           />
