@@ -6,17 +6,77 @@ import (
 	"log"
 	"os"
 
+	"encoding/json"
+	"net/http"
+
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
 )
 
-func main() {
-	ctx := context.Background()
+type ResponseData struct {
+	Result Result `json:"result"`
+}
 
-	apiKey, ok := os.LookupEnv("GEMINI_API_KEY")
-	if !ok {
-		log.Fatalln("Environment variable GEMINI_API_KEY not set")
+type Result struct {
+	Grading     string       `json:"grading"`
+	Explanation string       `json:"explanation"`
+	Falsehoods  []Falsehoods `json:"falsehoods"`
+}
+
+type Falsehoods struct {
+	Correction Correction `json:"correction"`
+	Summary    string     `json:"summary"`
+}
+
+type Correction struct {
+	Details string `json:"details"`
+	Type    string `json:"type"`
+}
+
+func main() {
+	http.HandleFunc("/message", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var req struct {
+			Message string `json:"message"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		ctx := context.Background()
+		apiKey, ok := os.LookupEnv("GEMINI_API_KEY")
+		if !ok {
+			http.Error(w, "Environment variable GEMINI_API_KEY not set", http.StatusInternalServerError)
+			return
+		}
+
+		resp, err := sendMessage(ctx, req.Message, apiKey)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error sending message: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, err = w.Write([]byte(fmt.Sprintf("%v", resp.Candidates[0].Content.Parts[0])))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error writing response: %v", err), http.StatusInternalServerError)
+			return
+		}
+	})
+
+	log.Println("Server started at :8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatalf("Server failed to start: %v", err)
 	}
+}
+
+func sendMessage(ctx context.Context, message, apiKey string) (*genai.GenerateContentResponse, error) {
 
 	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
@@ -97,12 +157,5 @@ func main() {
 		},
 	}
 
-	resp, err := model.GenerateContent(ctx, genai.Text("The Earth is flat."))
-	if err != nil {
-		log.Fatalf("Error sending message: %v", err.Error())
-	}
-
-	for _, part := range resp.Candidates[0].Content.Parts {
-		fmt.Printf("%v\n", part)
-	}
+	return model.GenerateContent(ctx, genai.Text(message))
 }
