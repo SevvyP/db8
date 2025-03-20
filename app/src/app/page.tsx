@@ -6,10 +6,22 @@ export default function Debate() {
   const [messages, setMessages] = React.useState<string[]>([]);
   const [input, setInput] = React.useState<string>("");
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (input.trim()) {
       setMessages([...messages, input.trim()]);
       setInput("");
+
+      const resp = await fetch("/api/message", {
+        method: "POST",
+        body: JSON.stringify({ message: input.trim() }),
+      });
+
+      if (resp.ok && resp.status === 200) {
+        const data = await resp.json();
+        setMessages([...messages, data.message]);
+      } else {
+        setMessages([...messages, "Failed to send message"]);
+      }
     }
   };
 
@@ -20,7 +32,7 @@ export default function Debate() {
     }
   };
 
-  const handleKeyPress = (event: any) => {
+  const handleKeyPress = (event: React.KeyboardEvent) => {
     if (event.key === "Enter") {
       if (event.shiftKey) {
         event.preventDefault();
