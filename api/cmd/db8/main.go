@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 
 	"encoding/json"
@@ -34,8 +35,10 @@ type Correction struct {
 }
 
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	http.HandleFunc("/message", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
+			logger.Error("Invalid request method")
 			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 			return
 		}
@@ -44,6 +47,7 @@ func main() {
 			Message string `json:"message"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			logger.Error("Invalid request body", "error", err)
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
@@ -51,12 +55,14 @@ func main() {
 		ctx := context.Background()
 		apiKey, ok := os.LookupEnv("GEMINI_API_KEY")
 		if !ok {
+			logger.Error("Environment variable GEMINI_API_KEY not set")
 			http.Error(w, "Environment variable GEMINI_API_KEY not set", http.StatusInternalServerError)
 			return
 		}
 
 		resp, err := sendMessage(ctx, req.Message, apiKey)
 		if err != nil {
+			logger.Error("Error sending message", "error", err.Error())
 			http.Error(w, fmt.Sprintf("Error sending message: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -65,14 +71,15 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		_, err = w.Write([]byte(fmt.Sprintf("%v", resp.Candidates[0].Content.Parts[0])))
 		if err != nil {
+			logger.Error("Error writing response", "error", err.Error())
 			http.Error(w, fmt.Sprintf("Error writing response: %v", err), http.StatusInternalServerError)
 			return
 		}
 	})
 
-	log.Println("Server started at :8080")
+	logger.Info("Server started at :8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatalf("Server failed to start: %v", err)
+		logger.Error("Server failed to start", "error", err.Error())
 	}
 }
 
