@@ -6,10 +6,35 @@ export default function Debate() {
   const [messages, setMessages] = React.useState<string[]>([]);
   const [input, setInput] = React.useState<string>("");
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (input.trim()) {
-      setMessages([...messages, input.trim()]);
+      const newMessage = input.trim();
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
       setInput("");
+
+      const requestBody = JSON.stringify({ message: newMessage });
+      console.log("Sending request with body:", requestBody);
+
+      const resp = await fetch("/api/message", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: requestBody,
+      });
+
+      if (resp.ok && resp.status === 200) {
+        const data = await resp.json();
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          data.result.explanation,
+        ]);
+      } else {
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          "Failed to send message",
+        ]);
+      }
     }
   };
 
@@ -20,7 +45,7 @@ export default function Debate() {
     }
   };
 
-  const handleKeyPress = (event: any) => {
+  const handleKeyPress = (event: React.KeyboardEvent) => {
     if (event.key === "Enter") {
       if (event.shiftKey) {
         event.preventDefault();
@@ -37,7 +62,10 @@ export default function Debate() {
       <div className="flex flex-col w-full bg-white shadow-md rounded-lg grow">
         <div className="flex flex-col overflow-y-auto grow bg-gray-100 break-words">
           {messages.map((message, index) => (
-            <div key={index} className="p-2 rounded-lg mb-2 bg-white max-w-full w-fit">
+            <div
+              key={index}
+              className="p-2 rounded-lg mb-2 bg-white max-w-full w-fit"
+            >
               <p className="text-black">
                 {message.split("\n").map((line, index) => (
                   <React.Fragment key={index}>
